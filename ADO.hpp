@@ -15,6 +15,8 @@ class ADO {
     pair<vertex, distance>** ps;
     const int k;
 
+    void buildCluster(int i, pair<vertex, map<vertex, distance>*> q);
+
     void buildHierarchy();
     void buildPS();
     void buildClusters();
