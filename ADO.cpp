@@ -71,9 +71,9 @@ void ADO::buildPS() {
         }
 
         while (!fibQueue->empty()) {
-            auto node = fibQueue->extract_min();
-            auto p = ps[node->value][i];
-            for (auto&& j : graph->getEdges(node->value)) {
+            auto v = fibQueue->pop();
+            auto p = ps[v][i];
+            for (auto&& j : graph->getEdges(v)) {
                 distance alt = p.second + j.second;
                 if (alt < ps[j.first][i].second) {
                     ps[j.first][i] = {p.first, alt};
@@ -101,9 +101,9 @@ void ADO::buildCluster(int i, pair<vertex, map<vertex, distance>*> q) {
         fibQueue->push(0.0, q.first);
 
         while (!fibQueue->empty()) {
-            auto node = fibQueue->extract_min();
-            auto p = q.second->find(node->value);
-            for (auto&& e : graph->getEdges(node->value)) {
+            auto v = fibQueue->pop();
+            auto p = q.second->find(v);
+            for (auto&& e : graph->getEdges(v)) {
                 distance alt = p->second + e.second;
                 if (alt < ps[e.first][i + 1].second && (q.second->count(e.first) == 0 || alt < q.second->at(e.first))) {
                     q.second->insert_or_assign(e.first, alt);

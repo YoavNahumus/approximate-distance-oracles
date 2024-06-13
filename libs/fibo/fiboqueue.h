@@ -94,16 +94,18 @@ class FibQueue : public FibHeap<T, V, Comp>
     return mit->second;
   }
 
-  void pop()
+  V pop()
   {
     if (Heap::empty())
-      return;
+      return -1;
     Node *x = Heap::extract_min();
     if (!x)
-      return; // should not happen.
+      return -1; // should not happen.
     
-    fstore.erase(x->v);
+    V v = x->v;
+    fstore.erase(v);
     delete x;
+    return v;
   }
 
   void clear() {
