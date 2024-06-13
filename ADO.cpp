@@ -74,7 +74,7 @@ void ADO::buildPS() {
             auto node = fibQueue->extract_min();
             auto p = ps[node->value][i];
             for (auto&& j : graph->getEdges(node->value)) {
-                distance alt = p.second + graph->getEdgeWeight(node->value, j.first);
+                distance alt = p.second + j.second;
                 if (alt < ps[j.first][i].second) {
                     ps[j.first][i] = {p.first, alt};
                     fibQueue->decrease_key_or_push(alt, j.first);
@@ -104,14 +104,14 @@ void ADO::buildCluster(int i, pair<vertex, map<vertex, distance>*> q) {
             auto node = fibQueue->extract_min();
             auto p = q.second->find(node->value);
             for (auto&& e : graph->getEdges(node->value)) {
-                distance alt = p->second + graph->getEdgeWeight(node->value, e.first);
+                distance alt = p->second + e.second;
                 if (alt < ps[e.first][i + 1].second && (q.second->count(e.first) == 0 || alt < q.second->at(e.first))) {
                     q.second->insert_or_assign(e.first, alt);
                     fibQueue->decrease_key_or_push(alt, e.first);
                 }
             }
         }
-        
+
         delete fibQueue;
     }
 }
