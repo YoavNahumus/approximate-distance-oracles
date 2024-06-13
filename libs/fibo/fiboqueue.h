@@ -68,6 +68,15 @@ class FibQueue : public FibHeap<T, V, Comp>
     return push(std::move(k),NULL,v);
   }
 
+  void decrease_key_or_push(T k, V v)
+  {
+    KeyNodeIter mit = find(v);
+    if (mit != fstore.end())
+      decrease_key(mit->second,k);
+    else
+      push(k,v);
+  }
+
   KeyNodeIter find(V v)
   {
     return fstore.find(v);

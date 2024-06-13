@@ -1,5 +1,8 @@
 #include "ADO.hpp"
 #include "libs/fibo/fiboqueue.h"
+#include <limits>
+
+using std::numeric_limits;
 
 ADO::ADO(Graph* graph, int k) : graph(graph), k(k) {
     hierarchy = new map<vertex, map<vertex, distance>*>*[k];
@@ -44,7 +47,33 @@ void ADO::buildHierarchy() {
 }
 
 void ADO::buildPS() {
-    // TODO: Implement this function
+    FibQueue<distance, vertex>* fibQueue = new FibQueue<distance, vertex>();
+    for (auto &&p = ps; p < ps + graph->vertexCount; ++p) {
+        for (int i = 0; i < k; ++i) {
+            *p[i] = { -1, numeric_limits<distance>::max() };
+        }
+    }
+    for (int i = 0; i < k; ++i) {
+        for (auto&& j : *hierarchy[i]) {
+            fibQueue->push(0.0, j.first);
+            ps[j.first][i] = {j.first, 0.0};
+        }
+
+        while (!fibQueue->empty()) {
+            auto node = fibQueue->extract_min();
+            auto p = ps[node->value][i];
+            for (auto&& j : graph->getEdges(node->value)) {
+                distance alt = p.second + graph->getEdgeWeight(node->value, j.first);
+                if (alt < ps[j.first][i].second) {
+                    ps[j.first][i] = {p.first, alt};
+                    fibQueue->decrease_key_or_push(alt, j.first);
+                }
+            }
+        }
+
+        fibQueue->clear();
+    }
+    delete fibQueue;
 }
 
 void ADO::buildClusters() {
