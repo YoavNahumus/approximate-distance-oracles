@@ -10,9 +10,9 @@ using std::pair;
 class ADO {
     private:
     Graph* graph;
-    map<int, map<int, double>*>** hierarchy;
-    map<int, double>** bunches;
-    pair<int, double>** ps;
+    map<vertex, map<vertex, distance>*>** hierarchy;
+    map<vertex, distance>** bunches;
+    pair<vertex, distance>** ps;
     const int k;
 
     void buildHierarchy();
@@ -25,7 +25,7 @@ class ADO {
     ~ADO();
 
     void preprocess();
-    double query(int vertex1, int vertex2);
+    double query(vertex vertex1, vertex vertex2);
 };
 
 #endif

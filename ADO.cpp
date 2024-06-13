@@ -2,11 +2,11 @@
 #include "libs/fibo/fiboqueue.h"
 
 ADO::ADO(Graph* graph, int k) : graph(graph), k(k) {
-    hierarchy = new map<int, map<int, double>*>*[k];
-    bunches = new map<int, double>*[graph->vertexCount];
-    ps = new pair<int, double>*[graph->vertexCount];
+    hierarchy = new map<vertex, map<vertex, distance>*>*[k];
+    bunches = new map<vertex, distance>*[graph->vertexCount];
+    ps = new pair<vertex, distance>*[graph->vertexCount];
     for (auto &&p = ps; p < ps + graph->vertexCount; ++p) {
-        *p = new pair<int, double>[k];
+        *p = new pair<vertex, distance>[k];
     }
 }
 
@@ -34,7 +34,7 @@ void ADO::preprocess() {
     buildBunches();
 }
 
-double ADO::query(int vertex1, int vertex2) {
+distance ADO::query(vertex vertex1, vertex vertex2) {
     // TODO: Implement this function
     return 0.0;
 }

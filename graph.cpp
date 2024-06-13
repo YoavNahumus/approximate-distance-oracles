@@ -1,8 +1,8 @@
 #include "graph.hpp"
 
 Graph::Graph(int vertexCount) : vertexCount(vertexCount) {
-    neighborsList = new map<int, double>*[vertexCount];
-    for (auto ptr = neighborsList; ptr < neighborsList + vertexCount; *(ptr++) = new map<int, double>());
+    neighborsList = new map<vertex, distance>*[vertexCount];
+    for (auto ptr = neighborsList; ptr < neighborsList + vertexCount; *(ptr++) = new map<vertex, distance>());
 }
 
 Graph::~Graph() {
@@ -10,15 +10,15 @@ Graph::~Graph() {
     delete[] neighborsList;
 }
 
-double Graph::getEdgeWeight(int vertex1, int vertex2) {
+double Graph::getEdgeWeight(vertex vertex1, vertex vertex2) {
     return neighborsList[vertex1]->at(vertex2);
 }
 
-const map<int, double>& Graph::getEdges(int vertex) {
+const map<vertex, distance>& Graph::getEdges(vertex vertex) {
     return *neighborsList[vertex];
 }
 
-void Graph::addEdge(int vertex1, int vertex2, double weight) {
+void Graph::addEdge(vertex vertex1, vertex vertex2, distance weight) {
     neighborsList[vertex1]->insert_or_assign(vertex2, weight);
     neighborsList[vertex2]->insert_or_assign(vertex1, weight);
 }

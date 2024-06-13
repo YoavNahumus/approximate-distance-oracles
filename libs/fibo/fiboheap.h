@@ -24,7 +24,7 @@
 #include <limits>
 #include <iostream>
 
-template<class T, class Comp = std::less<T>>
+template<class T, class V, class Comp = std::less<T>>
 class FibHeap
 {
  public:
@@ -33,8 +33,8 @@ class FibHeap
   class FibNode
   {
   public:
-    FibNode(T k, void *pl, int v)
-      :key(std::move(k)),mark(false),p(nullptr),left(nullptr),right(nullptr),child(nullptr),degree(-1),payload(pl),value(v)
+    FibNode(T k, void *pl, V v)
+      :key(std::move(k)),mark(false),p(nullptr),left(nullptr),right(nullptr),child(nullptr),degree(-1),payload(pl),value(std::move(v))
     {
     }
 
@@ -50,7 +50,7 @@ class FibHeap
     FibNode *child;
     int degree;
     void *payload;
-    int value;
+    V value;
   }; // end FibNode
 
   FibHeap() : FibHeap(std::less<T>())
@@ -565,14 +565,14 @@ class FibHeap
       delete x;
   }
 
-  FibNode* push(T k, void *pl, int v)
+  FibNode* push(T k, void *pl, V v)
   {
     FibNode *x = new FibNode(std::move(k),pl, v);
     insert(x);
     return x;
   }
 
-  FibNode* push(T k, int v)
+  FibNode* push(T k, V v)
   {
     return push(std::move(k),nullptr, v);
   }

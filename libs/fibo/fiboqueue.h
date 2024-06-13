@@ -29,11 +29,11 @@
 #include <unordered_map>
 #include <algorithm>
 
-template<class T, class Comp = std::less<T>>
-class FibQueue : public FibHeap<T, Comp>
+template<class T, class V, class Comp = std::less<T>>
+class FibQueue : public FibHeap<T, V, Comp>
 {
  public:
-  using Heap = FibHeap<T, Comp>;
+  using Heap = FibHeap<T, V, Comp>;
   using Node = typename Heap::FibNode;
   using KeyNodeIter = typename std::unordered_map<int, Node*>::iterator;
 
@@ -56,30 +56,30 @@ class FibQueue : public FibHeap<T, Comp>
     Heap::decrease_key(x,std::move(k));
   }
 
-  Node* push(T k, void *pl, int v)
+  Node* push(T k, void *pl, V v)
   {
     Node *x = Heap::push(std::move(k),pl,v);
     fstore.insert({ v, x });
     return x;
   }
 
-  Node* push(T k, int v)
+  Node* push(T k, V v)
   {
     return push(std::move(k),NULL,v);
   }
 
-  KeyNodeIter find(int v)
+  KeyNodeIter find(V v)
   {
     return fstore.find(v);
   }
 
-  int count(int v)
+  int count(V v)
   {
       auto mit = fstore.find(v);
       return mit != fstore.end();
   }
 
-  Node* findNode(int v)
+  Node* findNode(V v)
   {
     KeyNodeIter mit = find(v);
     return mit->second;

@@ -5,19 +5,22 @@
 
 using std::map;
 
+typedef int vertex;
+typedef double distance;
+
 class Graph {
 private:
-    map<int, double>** neighborsList;
+    map<vertex, distance>** neighborsList;
 public:
     const int vertexCount;
 
     Graph(int vertexCount);
     ~Graph();
 
-    double getEdgeWeight(int vertex1, int vertex2);
-    const map<int, double>& getEdges(int vertex);
+    double getEdgeWeight(vertex vertex1, vertex vertex2);
+    const map<vertex, distance>& getEdges(vertex vertex);
 
-    void addEdge(int vertex1, int vertex2, double weight);
+    void addEdge(vertex vertex1, vertex vertex2, distance weight);
 };
 
 #endif
