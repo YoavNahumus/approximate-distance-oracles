@@ -111,6 +111,8 @@ void ADO::buildCluster(int i, pair<vertex, map<vertex, distance>*> q) {
                 }
             }
         }
+        
+        delete fibQueue;
     }
 }
 
