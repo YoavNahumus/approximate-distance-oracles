@@ -7,7 +7,7 @@ Graph::Graph(int vertexCount) : vertexCount(vertexCount) {
 
 Graph::~Graph() {
     for (auto ptr = neighborsList; ptr < neighborsList + vertexCount; delete *(ptr++));
-    delete neighborsList;
+    delete[] neighborsList;
 }
 
 double Graph::getEdgeWeight(int vertex1, int vertex2) {
