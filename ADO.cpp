@@ -1,5 +1,5 @@
 #include "ADO.hpp"
-#include "libs/fibonacci.hpp"
+#include "libs/fibo/fiboqueue.h"
 
 ADO::ADO(Graph* graph, int k) : graph(graph), k(k) {
     hierarchy = new map<int, map<int, double>*>*[k];
