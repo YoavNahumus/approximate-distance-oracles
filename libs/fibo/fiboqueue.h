@@ -102,7 +102,7 @@ class FibQueue : public FibHeap<T, V, Comp>
     if (!x)
       return -1; // should not happen.
     
-    V v = x->v;
+    V v = x->value;
     fstore.erase(v);
     delete x;
     return v;
