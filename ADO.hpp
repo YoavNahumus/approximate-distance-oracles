@@ -29,7 +29,8 @@ class ADO {
 
     void preprocess();
     void preprocess(bool random);
-    double query(vertex vertex1, vertex vertex2);
+    distance query(vertex vertex1, vertex vertex2);
+    distance asymetricQuery(vertex vertex1, vertex vertex2);
 };
 
 #endif

@@ -2,10 +2,12 @@
 #include "libs/fibo/fiboqueue.h"
 #include <limits>
 #include <execution>
+#include <algorithm>
 
 using std::numeric_limits;
 using std::for_each;
 using std::execution::par;
+using std::min;
 
 ADO::ADO(Graph* graph, int k) : graph(graph), k(k) {
     hierarchy = new map<vertex, map<vertex, distance>*>*[k];
@@ -58,8 +60,35 @@ void ADO::preprocess(bool random) {
 }
 
 distance ADO::query(vertex vertex1, vertex vertex2) {
-    // TODO: Implement this function
-    return 0.0;
+    return min(asymetricQuery(vertex1, vertex2), asymetricQuery(vertex2, vertex1));
+}
+
+distance ADO::asymetricQuery(vertex vertex1, vertex vertex2) {
+    if (graph->hasEdge(vertex1, vertex2) > 0)
+        return graph->getEdgeWeight(vertex1, vertex2);
+
+    vertex w = vertex1;
+    vertex i = 0;
+    while (bunches[vertex2]->count(w) == 0/* && i <= k / 2*/) {
+        ++i;
+        vertex1 ^= vertex2;
+        vertex2 ^= vertex1;
+        vertex1 ^= vertex2;
+        w = ps[vertex1][i].first;
+    }
+    // if (i > k / 2) {
+    //     if (k % 2 == 0) {
+    //         auto pu = ps[vertex1][k / 2];
+    //         auto pv = ps[vertex2][k / 2 - 1];
+    //         return pu.second + bunches[pv.first]->at(pu.first) + pv.second;
+    //     } else {
+    //         auto pu = ps[vertex1][k / 2];
+    //         auto pv = ps[vertex2][k / 2];
+    //         return pu.second + bunches[pu.first]->at(pv.first) + pv.second;
+    //     }
+    // }
+        
+    return ps[vertex1][i].second + bunches[vertex2]->at(w);
 }
 
 void ADO::buildHierarchy() {
@@ -132,7 +161,7 @@ void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
             auto p = q->second->find(v);
             for (auto&& e : graph->getEdges(v)) {
                 distance alt = p->second + e.second;
-                if (alt < ps[e.first][i + 1].second && (q->second->count(e.first) == 0 || alt < q->second->at(e.first))) {
+                if (alt <= ps[e.first][i + 1].second && (q->second->count(e.first) == 0 || alt < q->second->at(e.first))) {
                     q->second->insert_or_assign(e.first, alt);
                     fibQueue->decrease_key_or_push(alt, e.first);
                 }

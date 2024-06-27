@@ -22,3 +22,7 @@ void Graph::addEdge(vertex vertex1, vertex vertex2, distance weight) {
     neighborsList[vertex1]->insert_or_assign(vertex2, weight);
     neighborsList[vertex2]->insert_or_assign(vertex1, weight);
 }
+
+bool Graph::hasEdge(vertex vertex1, vertex vertex2) {
+    return neighborsList[vertex1]->count(vertex2) > 0;
+}

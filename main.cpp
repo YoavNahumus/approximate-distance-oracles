@@ -25,8 +25,8 @@ int main(int argc, char const *argv[]) {
     ado->preprocess(true);
 
     for (int i = 0; i < graph->vertexCount; i++) {
-        for (auto &&p : *ado->bunches[i]) {
-            std::cout << "distance from " << i << " to " << p.first << ": " << p.second << std::endl;
+        for (int j = 0; j < graph->vertexCount; j++) {
+            std::cout << "Distance from " << i << " to " << j << " is " << ado->query(i, j) << std::endl;
         }
     }
 

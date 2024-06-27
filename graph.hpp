@@ -19,6 +19,7 @@ public:
 
     double getEdgeWeight(vertex vertex1, vertex vertex2);
     const map<vertex, distance>& getEdges(vertex vertex);
+    bool hasEdge(vertex vertex1, vertex vertex2);
 
     void addEdge(vertex vertex1, vertex vertex2, distance weight);
 };
