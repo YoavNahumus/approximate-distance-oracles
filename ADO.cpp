@@ -9,39 +9,49 @@ using std::execution::par;
 
 ADO::ADO(Graph* graph, int k) : graph(graph), k(k) {
     hierarchy = new map<vertex, map<vertex, distance>*>*[k];
-    for (auto &&p = hierarchy; p < hierarchy + k; ++p) {
+    for (auto p = hierarchy; p < hierarchy + k; ++p) {
         *p = new map<vertex, map<vertex, distance>*>();
     }
     bunches = new map<vertex, distance>*[graph->vertexCount];
-    for (auto &&p = bunches; p < bunches + graph->vertexCount; ++p) {
+    for (auto p = bunches; p < bunches + graph->vertexCount; ++p) {
         *p = new map<vertex, distance>();
     }
     ps = new pair<vertex, distance>*[graph->vertexCount];
-    for (auto &&p = ps; p < ps + graph->vertexCount; ++p) {
+    for (auto p = ps; p < ps + graph->vertexCount; ++p) {
         *p = new pair<vertex, distance>[k + 1];
     }
 }
 
 ADO::~ADO() {
-    for (auto &&p = ps; p < ps + graph->vertexCount; delete[] *(p++));
+    for (auto p = ps; p < ps + graph->vertexCount; delete[] *(p++));
     delete[] ps;
 
-    for (auto &&p = bunches; p < bunches + graph->vertexCount; delete *(p++));
+    for (auto p = bunches; p < bunches + graph->vertexCount; delete *(p++));
     delete[] bunches;
 
-    if (hierarchy[0]->begin() != hierarchy[0]->end() && hierarchy[0]->begin()->second != nullptr) {
-        for (auto &&p = hierarchy; p < hierarchy + k - 1; ++p) {
-            for (auto &&q : **p) {
+    for (auto p = hierarchy; p < hierarchy + k; ++p) {
+        for (auto &&q : **p) {
+            if (q.second != nullptr)
                 delete q.second;
-            }
         }
     }
-    for (auto &&p = hierarchy; p < hierarchy + k - 1; delete *(p++));
+    for (auto p = hierarchy; p < hierarchy + k; delete *(p++));
     delete[] hierarchy;
 }
 
 void ADO::preprocess() {
     buildHierarchy();
+    buildPS();
+    buildClusters();
+    buildBunches();
+}
+
+void ADO::preprocess(bool random) {
+    if (!random) {
+        preprocess();
+        return;
+    }
+    buildRandHierarchy();
     buildPS();
     buildClusters();
     buildBunches();
@@ -56,6 +66,22 @@ void ADO::buildHierarchy() {
     // TODO: Implement this function
 }
 
+void ADO::buildRandHierarchy() {
+    srand(time(nullptr));
+    double chance = pow(graph->vertexCount, -1.0 / k);
+    for (int j = 0; j < graph->vertexCount; ++j) {
+        hierarchy[0]->insert({j, nullptr});
+    }
+    for (int i = 1; i < k; ++i) {
+        for (auto&& j : *hierarchy[i - 1]) {
+            if (rand() < chance * RAND_MAX) {
+                hierarchy[i]->insert(j);
+            }
+        }
+    }
+
+}
+
 void ADO::buildPS() {
     FibQueue<distance, vertex>* fibQueue = new FibQueue<distance, vertex>();
     for (int j = 0; j < graph->vertexCount; ++j) {
@@ -65,7 +91,7 @@ void ADO::buildPS() {
         ps[j][0] = { j, 0.0 };
     }
     for (int i = k - 1; i > 0; --i) {
-        for (auto&& j : *hierarchy[i + 1]) {
+        for (auto&& j : *hierarchy[i]) {
             fibQueue->push(0.0, j.first);
             ps[j.first][i] = {j.first, 0.0};
         }
@@ -82,7 +108,7 @@ void ADO::buildPS() {
             }
         }
 
-        for (auto&& p = ps; p < ps + graph->vertexCount; ++p) {
+        for (auto p = ps; p < ps + graph->vertexCount; ++p) {
             if ((*p)[i].first == (*p)[i + 1].first) {
                 (*p)[i] = (*p)[i + 1];
             }
@@ -93,20 +119,21 @@ void ADO::buildPS() {
     delete fibQueue;
 }
 
-void ADO::buildCluster(int i, pair<vertex, map<vertex, distance>*> q) {
+void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
     // make sure that the vertex is not in the next level (A_(i+1))
-    if (i < k - 1 && hierarchy[i - 1]->count(q.first) == 0) {
-        q.second = new map<vertex, distance>();
+    if (i < k - 1 && hierarchy[i + 1]->count(q->first) == 0) {
+        q->second = new map<vertex, distance>();
         FibQueue<distance, vertex>* fibQueue = new FibQueue<distance, vertex>();
-        fibQueue->push(0.0, q.first);
+        fibQueue->push(0.0, q->first);
+        q->second->insert_or_assign(q->first, 0.0);
 
         while (!fibQueue->empty()) {
             auto v = fibQueue->pop();
-            auto p = q.second->find(v);
+            auto p = q->second->find(v);
             for (auto&& e : graph->getEdges(v)) {
                 distance alt = p->second + e.second;
-                if (alt < ps[e.first][i + 1].second && (q.second->count(e.first) == 0 || alt < q.second->at(e.first))) {
-                    q.second->insert_or_assign(e.first, alt);
+                if (alt < ps[e.first][i + 1].second && (q->second->count(e.first) == 0 || alt < q->second->at(e.first))) {
+                    q->second->insert_or_assign(e.first, alt);
                     fibQueue->decrease_key_or_push(alt, e.first);
                 }
             }
@@ -119,14 +146,17 @@ void ADO::buildCluster(int i, pair<vertex, map<vertex, distance>*> q) {
 void ADO::buildClusters() {
     for (int i = 0; i < k; ++i) {
         for_each(par, hierarchy[i]->begin(), hierarchy[i]->end(), [this, i](auto&& p) {
-            buildCluster(i, {p.first, p.second});
+            buildCluster(i, &p);
         });
     }
 }
 
 void ADO::buildBunches() {
-    for (auto&& p = hierarchy; p < hierarchy + k; ++p) {
+    for (auto p = hierarchy; p < hierarchy + k; ++p) {
         for (auto&& q : **p) {
+            if (q.second == nullptr) {
+                continue;
+            }
             for (auto&& r : *q.second) {
                 bunches[r.first]->insert_or_assign(q.first, r.second);
             }

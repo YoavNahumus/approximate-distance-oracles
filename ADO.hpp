@@ -8,16 +8,17 @@ using std::map;
 using std::pair;
 
 class ADO {
-    private:
+    public:
     Graph* graph;
     map<vertex, map<vertex, distance>*>** hierarchy;
     map<vertex, distance>** bunches;
     pair<vertex, distance>** ps;
     const int k;
 
-    void buildCluster(int i, pair<vertex, map<vertex, distance>*> q);
+    void buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q);
 
     void buildHierarchy();
+    void buildRandHierarchy();
     void buildPS();
     void buildClusters();
     void buildBunches();
@@ -27,6 +28,7 @@ class ADO {
     ~ADO();
 
     void preprocess();
+    void preprocess(bool random);
     double query(vertex vertex1, vertex vertex2);
 };
 
