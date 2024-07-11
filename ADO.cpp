@@ -3,13 +3,15 @@
 #include <limits>
 #include <execution>
 #include <algorithm>
+#include <set>
 
 using std::numeric_limits;
 using std::for_each;
 using std::execution::par;
 using std::min;
+using std::set;
 
-ADO::ADO(Graph* graph, int k) : graph(graph), k(k) {
+ADO::ADO(Graph* graph, int k, bool isClassic) : graph(graph), k(k), isClassic(isClassic) {
     hierarchy = new map<vertex, map<vertex, distance>*>*[k];
     for (auto p = hierarchy; p < hierarchy + k; ++p) {
         *p = new map<vertex, map<vertex, distance>*>();
@@ -49,7 +51,7 @@ void ADO::preprocess() {
 }
 
 void ADO::preprocess(bool random) {
-    if (!random) {
+    if (!random && !isClassic) {
         preprocess();
         return;
     }
@@ -60,6 +62,7 @@ void ADO::preprocess(bool random) {
 }
 
 distance ADO::query(vertex vertex1, vertex vertex2) {
+    if (vertex1 == vertex2) return 0;
     return min(asymetricQuery(vertex1, vertex2), asymetricQuery(vertex2, vertex1));
 }
 
@@ -69,24 +72,20 @@ distance ADO::asymetricQuery(vertex vertex1, vertex vertex2) {
 
     vertex w = vertex1;
     vertex i = 0;
-    while (bunches[vertex2]->count(w) == 0/* && i <= k / 2*/) {
+    int index = (k - 1) / 2;
+    if (isClassic) index = k;
+    while (bunches[vertex2]->count(w) == 0 && i <= index) {
         ++i;
         vertex1 ^= vertex2;
         vertex2 ^= vertex1;
         vertex1 ^= vertex2;
         w = ps[vertex1][i].first;
     }
-    // if (i > k / 2) {
-    //     if (k % 2 == 0) {
-    //         auto pu = ps[vertex1][k / 2];
-    //         auto pv = ps[vertex2][k / 2 - 1];
-    //         return pu.second + bunches[pv.first]->at(pu.first) + pv.second;
-    //     } else {
-    //         auto pu = ps[vertex1][k / 2];
-    //         auto pv = ps[vertex2][k / 2];
-    //         return pu.second + bunches[pu.first]->at(pv.first) + pv.second;
-    //     }
-    // }
+    if (i > index) {
+        auto pu = ps[vertex1][index];
+        auto pv = ps[vertex2][index + 1 - k % 2];
+        return pu.second + bunches[pv.first]->at(pu.first) + pv.second;
+    }
         
     return ps[vertex1][i].second + bunches[vertex2]->at(w);
 }
@@ -150,11 +149,17 @@ void ADO::buildPS() {
 
 void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
     // make sure that the vertex is not in the next level (A_(i+1))
-    if (i < k - 1 && hierarchy[i + 1]->count(q->first) == 0) {
+    if ((i < k - 1 && hierarchy[i + 1]->count(q->first) == 0) || i == k - 1) {
         q->second = new map<vertex, distance>();
         FibQueue<distance, vertex>* fibQueue = new FibQueue<distance, vertex>();
         fibQueue->push(0.0, q->first);
         q->second->insert_or_assign(q->first, 0.0);
+        set<vertex>* to_remove = nullptr;
+        int index = 0;
+        if (i >= (k - 1) / 2 && !isClassic) {
+            to_remove = new set<vertex>();
+            index = (k - 1) / 2 + 1 - k % 2;
+        }
 
         while (!fibQueue->empty()) {
             auto v = fibQueue->pop();
@@ -164,8 +169,21 @@ void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
                 if (alt <= ps[e.first][i + 1].second && (q->second->count(e.first) == 0 || alt < q->second->at(e.first))) {
                     q->second->insert_or_assign(e.first, alt);
                     fibQueue->decrease_key_or_push(alt, e.first);
+                } else if (to_remove != nullptr && (q->second->count(e.first) == 0 || alt < q->second->at(e.first))) {
+                    if (hierarchy[index]->count(e.first) != 1) {
+                        to_remove->insert(e.first);
+                    }
+                    q->second->insert_or_assign(e.first, alt);
+                    fibQueue->decrease_key_or_push(alt, e.first);
                 }
             }
+        }
+
+        if (to_remove != nullptr) {
+            for (auto&& v : *to_remove) {
+                q->second->erase(v);
+            }
+            delete to_remove;
         }
 
         delete fibQueue;

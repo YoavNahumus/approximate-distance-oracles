@@ -14,6 +14,7 @@ class ADO {
     map<vertex, distance>** bunches;
     pair<vertex, distance>** ps;
     const int k;
+    const bool isClassic;
 
     void buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q);
 
@@ -24,7 +25,7 @@ class ADO {
     void buildBunches();
 
     public:
-    ADO(Graph* graph, int k);
+    ADO(Graph* graph, int k, bool isClassic);
     ~ADO();
 
     void preprocess();

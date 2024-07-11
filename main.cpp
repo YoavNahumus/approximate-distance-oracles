@@ -21,7 +21,7 @@ int main(int argc, char const *argv[]) {
     graph->addEdge(7, 8, 6);
     graph->addEdge(7, 9, 7);
     graph->addEdge(8, 9, 8);
-    ADO* ado = new ADO(graph, 3);
+    ADO* ado = new ADO(graph, 3, false);
     ado->preprocess(true);
 
     for (int i = 0; i < graph->vertexCount; i++) {
