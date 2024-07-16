@@ -196,23 +196,18 @@ void ADO::buildHierarchy() {
     set<vertex>** sets2 = new set<vertex>*[graph->vertexCount];
     for (int j = 0; j < graph->vertexCount; ++j) {
         sets2[j] = new set<vertex>;
-        set<pair<vertex, distance>>* visited = new set<pair<vertex, distance>>;
         dijkstra(j, [this](vertex v, distance d) {
             return d < ps[v][1].second;
-        }, [this](vertex v, distance d) {
-            return true;
-        }, [this, j, visited](vertex v, distance d) {
-            visited->insert({v, d});
-        });
-        for (auto&& p : *visited) {
-            for (auto&& e : graph->getEdges(p.first)) {
+        }, [this, j, sets](vertex v, distance d) {
+            for (auto&& e : graph->getEdges(v)) {
                 if (sets[j]->count(e.first) == 0){
-                    sets2[j]->insert(p.first);
-                    break;
+                    return true;
                 }
             }
-        }
-        delete visited;
+            return false;
+        }, [this, j, sets2](vertex v, distance d) {
+            sets2[j]->insert(v);
+        });
     }
 
     delete hitting;
