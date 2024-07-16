@@ -175,10 +175,11 @@ void ADO::buildHierarchy() {
         
     }
     set<vertex>** sets = new set<vertex>*[graph->vertexCount];
+    double s = pow(graph->edgeCount, 1.0 / k) * log(graph->vertexCount);
     for (int j = 0; j < graph->vertexCount; ++j) {
         sets[j] = new set<vertex>;
-        dijkstra(j, [this](vertex v, distance d) {
-            return d < ps[v][1].second;
+        dijkstra(j, [this, j, sets, s](vertex v, distance d) {
+            return sets[j]->size() < s;
         }, [this](vertex v, distance d) {
             return true;
         }, [this, j, sets](vertex v, distance d) {
@@ -192,20 +193,21 @@ void ADO::buildHierarchy() {
     }
     buildPS();
 
+    set<vertex>** sets2 = new set<vertex>*[graph->vertexCount];
     for (int j = 0; j < graph->vertexCount; ++j) {
-        sets[j]->clear();
-        set<vertex>* visited = new set<vertex>;
+        sets2[j] = new set<vertex>;
+        set<pair<vertex, distance>>* visited = new set<pair<vertex, distance>>;
         dijkstra(j, [this](vertex v, distance d) {
             return d < ps[v][1].second;
         }, [this](vertex v, distance d) {
             return true;
         }, [this, j, visited](vertex v, distance d) {
-            visited->insert(v);
+            visited->insert({v, d});
         });
-        for (auto&& v : *visited) {
-            for (auto&& e : graph->getEdges(v)) {
-                if (visited->count(e.first) == 0) {
-                    sets[j]->insert(v);
+        for (auto&& p : *visited) {
+            for (auto&& e : graph->getEdges(p.first)) {
+                if (sets[j]->count(e.first) == 0){
+                    sets2[j]->insert(p.first);
                     break;
                 }
             }
@@ -214,13 +216,15 @@ void ADO::buildHierarchy() {
     }
 
     delete hitting;
-    hitting = hittingSet(sets, graph->vertexCount);
+    hitting = hittingSet(sets2, graph->vertexCount);
     for (auto&& v : *hitting) {
         hierarchy[1]->insert({v, nullptr});
     }
     for (int i = 0; i < graph->vertexCount; ++i) {
+        delete sets2[i];
         delete sets[i];
     }
+    delete[] sets2;
     delete[] sets;
     delete hitting;
 

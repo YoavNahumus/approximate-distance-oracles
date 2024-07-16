@@ -12,9 +12,10 @@ class Graph {
 private:
     map<vertex, distance>** neighborsList;
 public:
-    const int vertexCount;
+    const vertex vertexCount;
+    vertex edgeCount;
 
-    Graph(int vertexCount);
+    Graph(vertex vertexCount);
     ~Graph();
 
     double getEdgeWeight(vertex vertex1, vertex vertex2);

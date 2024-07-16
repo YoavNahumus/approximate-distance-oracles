@@ -1,6 +1,6 @@
 #include "graph.hpp"
 
-Graph::Graph(int vertexCount) : vertexCount(vertexCount) {
+Graph::Graph(vertex vertexCount) : vertexCount(vertexCount), edgeCount(0) {
     neighborsList = new map<vertex, distance>*[vertexCount];
     for (auto ptr = neighborsList; ptr < neighborsList + vertexCount; *(ptr++) = new map<vertex, distance>());
 }
@@ -21,6 +21,7 @@ const map<vertex, distance>& Graph::getEdges(vertex vertex) {
 void Graph::addEdge(vertex vertex1, vertex vertex2, distance weight) {
     neighborsList[vertex1]->insert_or_assign(vertex2, weight);
     neighborsList[vertex2]->insert_or_assign(vertex1, weight);
+    edgeCount++;
 }
 
 bool Graph::hasEdge(vertex vertex1, vertex vertex2) {
