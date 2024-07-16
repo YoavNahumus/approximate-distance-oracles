@@ -3,9 +3,11 @@
 
 #include "graph.hpp"
 #include <map>
+#include <functional>
 
 using std::map;
 using std::pair;
+using std::function;
 
 class ADO {
     public:
@@ -23,13 +25,13 @@ class ADO {
     void buildPS();
     void buildClusters();
     void buildBunches();
+    void dijkstra(vertex origin, function<bool(vertex, distance)> shouldCheck, function<bool(vertex, distance)> shouldInsert, function<void(vertex, distance)> insertDistance);
 
     public:
     ADO(Graph* graph, int k, bool isClassic);
     ~ADO();
 
     void preprocess();
-    void preprocess(bool random);
     distance query(vertex vertex1, vertex vertex2);
     distance asymetricQuery(vertex vertex1, vertex vertex2);
 };
