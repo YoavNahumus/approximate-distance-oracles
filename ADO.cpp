@@ -107,6 +107,62 @@ void ADO::dijkstra(vertex origin, function<bool(vertex, distance)> shouldCheck, 
     delete fibQueue;
 }
 
+template<class T>
+set<T>* ADO::hittingSet(set<T>** sets, int setCount) {
+    set<T>* result = new set<T>;
+    set<pair<T, set<set<T>*>*>>** arr = new set<pair<T, set<set<T>*>*>>*[setCount];
+    map<T, set<set<T>*>*>* inverse = new map<T, set<set<T>*>*>();
+    for (int i = 0; i < setCount; ++i) {
+        arr[i] = new set<pair<T, set<set<T>*>*>>;
+        for (auto&& v : *sets[i]) {
+            auto iter = inverse->find(v);
+            if (iter == inverse->end()) {
+                set<set<T>*>* s = new set<set<T>*>;
+                s->insert(sets[i]);
+                inverse->insert({v, s});
+            } else {
+                iter->second->insert(sets[i]);
+            }
+        }
+    }
+
+    for (auto&& p : *inverse) {
+        arr[p.second->size() - 1]->insert({p.first, p.second});
+    }
+    delete inverse;
+
+    set<set<T>*>* alreadyHit = new set<set<T>*>;
+    for (int i = setCount - 1; i > 1 && alreadyHit->size() != setCount; --i) {
+        for (auto&& p : *arr[i]) {
+            int size = p.second->size();
+            for (auto&& s : *alreadyHit) {
+                if (p.second->count(s) > 0) {
+                    p.second->erase(s);
+                }
+            }
+            if (size = p.second->size()) {
+                result->insert(p.first);
+                for (auto&& s : *p.second) {
+                    alreadyHit->insert(s);
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < setCount; ++i) {
+        for (auto&& p : *arr[i]) {
+            delete p.second;
+        }
+        delete arr[i];
+    }
+
+    delete alreadyHit;
+
+    delete[] arr;
+    
+    return result;
+}
+
 void ADO::buildHierarchy() {
     if (isClassic) {
         buildRandHierarchy();
@@ -116,12 +172,28 @@ void ADO::buildHierarchy() {
     double chance = pow(graph->vertexCount, -1.0 / k);
     for (int j = 0; j < graph->vertexCount; ++j) {
         hierarchy[0]->insert({j, nullptr});
-        if (rand() < chance * RAND_MAX) {
-            hierarchy[1]->insert({j, nullptr});
-        }
+        
+    }
+    set<vertex>** sets = new set<vertex>*[graph->vertexCount];
+    for (int j = 0; j < graph->vertexCount; ++j) {
+        sets[j] = new set<vertex>;
+        dijkstra(j, [this](vertex v, distance d) {
+            return d < ps[v][1].second;
+        }, [this](vertex v, distance d) {
+            return true;
+        }, [this, j, sets](vertex v, distance d) {
+            sets[j]->insert(v);
+        });
+    }
+
+    set<vertex>* hitting = hittingSet(sets, graph->vertexCount);
+    for (auto&& v : *hitting) {
+        hierarchy[1]->insert({v, nullptr});
     }
     buildPS();
+
     for (int j = 0; j < graph->vertexCount; ++j) {
+        sets[j]->clear();
         set<vertex>* visited = new set<vertex>;
         dijkstra(j, [this](vertex v, distance d) {
             return d < ps[v][1].second;
@@ -133,13 +205,25 @@ void ADO::buildHierarchy() {
         for (auto&& v : *visited) {
             for (auto&& e : graph->getEdges(v)) {
                 if (visited->count(e.first) == 0) {
-                    hierarchy[1]->insert_or_assign(v, nullptr);
+                    sets[j]->insert(v);
                     break;
                 }
             }
         }
         delete visited;
     }
+
+    delete hitting;
+    hitting = hittingSet(sets, graph->vertexCount);
+    for (auto&& v : *hitting) {
+        hierarchy[1]->insert({v, nullptr});
+    }
+    for (int i = 0; i < graph->vertexCount; ++i) {
+        delete sets[i];
+    }
+    delete[] sets;
+    delete hitting;
+
     for (int i = 2; i < k; ++i) {
         for (auto&& j : *hierarchy[i - 1]) {
             if (rand() < chance * RAND_MAX) {
