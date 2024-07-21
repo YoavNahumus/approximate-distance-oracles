@@ -165,3 +165,13 @@ void Graph::addEdge(vertex vertex1, vertex vertex2, distance weight) {
 bool Graph::hasEdge(vertex vertex1, vertex vertex2) {
     return neighborsList[vertex1]->count(vertex2) > 0;
 }
+
+void Graph::printEdges() const {
+    for (int i = 0; i < vertexCount; ++i) {
+        const auto& edges = *neighborsList[i];
+        for (const auto& edge : edges) {
+            std::cout << "Edge from " << i << " to " << edge.first
+                      << " with weight " << edge.second << std::endl;
+        }
+    }
+}
