@@ -33,5 +33,11 @@ int main(int argc, char const *argv[]) {
     delete ado;
     delete graph;
 
+    Graph* g = new Graph("musae_git_edges.csv", 37700, false);
+    
+    g->printEdges();
+
+    delete g;
+
     return 0;
 }

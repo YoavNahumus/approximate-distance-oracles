@@ -1,7 +1,12 @@
 #ifndef OUR_GRAPH_HPP
 #define OUR_GRAPH_HPP
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <map>
+#include <utility>
 
 using std::map;
 
@@ -11,12 +16,16 @@ typedef double distance;
 class Graph {
 private:
     map<vertex, distance>** neighborsList;
+    void loadFromCSV(const std::string &filename, int vertexCount, bool weighted);
 public:
     const vertex vertexCount;
     vertex edgeCount;
 
     Graph(vertex vertexCount);
+    Graph(const std::string &filename, int vertexCount, bool weighted);
     ~Graph();
+
+    void printEdges() const;
 
     double getEdgeWeight(vertex vertex1, vertex vertex2);
     const map<vertex, distance>& getEdges(vertex vertex);
