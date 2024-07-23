@@ -16,13 +16,13 @@ typedef double distance;
 class Graph {
 private:
     map<vertex, distance>** neighborsList;
-    void loadFromCSV(const std::string &filename, int vertexCount, bool weighted);
+    void loadFromCSV(const std::string &filename, bool weighted);
 public:
-    const vertex vertexCount;
+    vertex vertexCount;
     vertex edgeCount;
 
     Graph(vertex vertexCount);
-    Graph(const std::string &filename, int vertexCount, bool weighted);
+    Graph(const std::string &filename, bool weighted);
     ~Graph();
 
     void printEdges() const;

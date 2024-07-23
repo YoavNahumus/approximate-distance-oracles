@@ -5,11 +5,11 @@ Graph::Graph(vertex vertexCount) : vertexCount(vertexCount), edgeCount(0) {
     for (auto ptr = neighborsList; ptr < neighborsList + vertexCount; *(ptr++) = new map<vertex, distance>());
 }
 
-Graph::Graph(const std::string &filename, int vertexCount, bool weighted) : vertexCount(vertexCount) {
-    this->loadFromCSV(filename, vertexCount, weighted);
+Graph::Graph(const std::string &filename, bool weighted) {
+    this->loadFromCSV(filename, weighted);
 }
 
-void Graph::loadFromCSV(const std::string &filename, int vertexCount, bool weighted) {
+void Graph::loadFromCSV(const std::string &filename, bool weighted) {
     std::ifstream inputFile(filename);
     if (!inputFile) {
         std::cerr << "Error opening file!" << std::endl;
@@ -20,7 +20,7 @@ void Graph::loadFromCSV(const std::string &filename, int vertexCount, bool weigh
         std::string line;
         std::getline(inputFile, line); // Skip the header line if there is one
 
-        vertexCount = 0;
+        this->vertexCount = 0;
 
         while (std::getline(inputFile, line)) {
             std::istringstream iss(line);
