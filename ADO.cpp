@@ -46,9 +46,13 @@ ADO::~ADO() {
 
 void ADO::preprocess() {
     buildHierarchy();
+    std::cout << "Hierarchy built" << std::endl;
     buildPS();
+    std::cout << "PS built" << std::endl;
     buildClusters();
+    std::cout << "Clusters built" << std::endl;
     buildBunches();
+    std::cout << "Bunches built" << std::endl;
 }
 
 distance ADO::query(vertex vertex1, vertex vertex2) {
@@ -289,7 +293,7 @@ void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
     // make sure that the vertex is not in the next level (A_(i+1))
     if ((i < k - 1 && hierarchy[i + 1]->count(q->first) == 0) || i == k - 1) {
         q->second = new map<vertex, distance>();
-        if (i == (k - 1) / 2) {
+        if (i == (k - 1) / 2 && !isClassic) {
             dijkstra(q->first, [this, i](vertex v, distance d) {
                 return true;
             }, [this, i](vertex v, distance d) {
@@ -311,9 +315,15 @@ void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
 
 void ADO::buildClusters() {
     for (int i = 0; i < k; ++i) {
-        for_each(par, hierarchy[i]->begin(), hierarchy[i]->end(), [this, i](auto&& p) {
-            buildCluster(i, &p);
-        });
+        int size = hierarchy[i]->size();
+        #pragma omp parallel for
+        for (int j = 0; j < size; ++j) {
+            auto iter = hierarchy[i]->begin();
+            std::advance(iter, j);
+            buildCluster(i, &(*iter));
+        }
+        std::cout << "Cluster " << i << " built" << std::endl;
+        std::cout << "Heirarchy size: " << hierarchy[i]->size() << std::endl;
     }
 }
 
