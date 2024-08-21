@@ -11,6 +11,7 @@ using std::execution::par;
 using std::min;
 using std::set;
 using std::function;
+using std::unordered_map;
 
 ADO::ADO(Graph* graph, int k, bool isClassic) : graph(graph), k(k), isClassic(isClassic) {
     hierarchy = new map<vertex, map<vertex, distance>*>*[k];
@@ -25,6 +26,7 @@ ADO::ADO(Graph* graph, int k, bool isClassic) : graph(graph), k(k), isClassic(is
     for (auto p = ps; p < ps + graph->vertexCount; ++p) {
         *p = new pair<vertex, distance>[k + 1];
     }
+    reduced = false;
 }
 
 ADO::~ADO() {
@@ -42,6 +44,7 @@ ADO::~ADO() {
     }
     for (auto p = hierarchy; p < hierarchy + k; delete *(p++));
     delete[] hierarchy;
+    if (reduced) delete graph;
 }
 
 void ADO::preprocess() {
@@ -82,33 +85,6 @@ distance ADO::asymetricQuery(vertex vertex1, vertex vertex2) {
     }
         
     return ps[vertex1][i].second + bunches[vertex2]->at(w);
-}
-
-void ADO::dijkstra(vertex origin, function<bool(vertex, distance)> shouldCheck, function<bool(vertex, distance)> shouldInsert, function<void(vertex, distance)> insertDistance) {
-    FibQueue<distance, vertex>* fibQueue = new FibQueue<distance, vertex>();
-    fibQueue->push(0.0, origin);
-    map<vertex, distance>* distances = new map<vertex, distance>();
-    distances->insert_or_assign(origin, 0.0);
-    while (!fibQueue->empty()) {
-        auto v = fibQueue->pop();
-        auto p = distances->at(v);
-        for (auto&& e : graph->getEdges(v)) {
-            distance alt = p + e.second;
-            if (shouldCheck(e.first, alt) && (distances->count(e.first) == 0 || alt < distances->at(e.first))) {
-                fibQueue->decrease_key_or_push(alt, e.first);
-                distances->insert_or_assign(e.first, alt);
-            }
-        }
-    }
-
-    for (auto&& p : *distances) {
-        if (shouldInsert(p.first, p.second)) {
-            insertDistance(p.first, p.second);
-        }
-    }
-
-    delete distances;
-    delete fibQueue;
 }
 
 template<class T>
@@ -180,16 +156,15 @@ void ADO::buildHierarchy() {
     }
     set<vertex>** sets = new set<vertex>*[graph->vertexCount];
     double s = pow(graph->edgeCount, 1.0 / k) * log(graph->vertexCount);
+    #pragma omp parallel for
     for (int j = 0; j < graph->vertexCount; ++j) {
         sets[j] = new set<vertex>;
-        dijkstra(j, [this, j, sets, s](vertex v, distance d) {
-            return sets[j]->size() < s;
-        }, [this](vertex v, distance d) {
-            return true;
-        }, [this, j, sets](vertex v, distance d) {
+        graph->dijkstra(j, s, [this, j, sets](vertex v, distance d) {
             sets[j]->insert(v);
         });
     }
+
+    std::cout << "Hitting set" << std::endl;
 
     set<vertex>* hitting = hittingSet(sets, graph->vertexCount);
     for (auto&& v : *hitting) {
@@ -200,7 +175,7 @@ void ADO::buildHierarchy() {
     set<vertex>** sets2 = new set<vertex>*[graph->vertexCount];
     for (int j = 0; j < graph->vertexCount; ++j) {
         sets2[j] = new set<vertex>;
-        dijkstra(j, [this](vertex v, distance d) {
+        graph->dijkstra(j, [this](vertex v, distance d) {
             return d < ps[v][1].second;
         }, [this, j, sets](vertex v, distance d) {
             for (auto&& e : graph->getEdges(v)) {
@@ -294,7 +269,7 @@ void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
     if ((i < k - 1 && hierarchy[i + 1]->count(q->first) == 0) || i == k - 1) {
         q->second = new map<vertex, distance>();
         if (i == (k - 1) / 2 && !isClassic) {
-            dijkstra(q->first, [this, i](vertex v, distance d) {
+            graph->dijkstra(q->first, [this, i](vertex v, distance d) {
                 return true;
             }, [this, i](vertex v, distance d) {
                 return d < ps[v][i + 1].second || hierarchy[i + 1 - k % 2]->count(v) == 1;
@@ -302,7 +277,7 @@ void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
                 q->second->insert_or_assign(v, d);
             });
         } else {
-            dijkstra(q->first, [this, i](vertex v, distance d) {
+            graph->dijkstra(q->first, [this, i](vertex v, distance d) {
                 return d < ps[v][i + 1].second;
             }, [this, i](vertex v, distance d) {
                 return true;

@@ -1,7 +1,7 @@
 #ifndef OUR_ADO_HPP
 #define OUR_ADO_HPP
 
-#include "graph.hpp"
+#include "libs/graphs/graph.h"
 #include <map>
 #include <functional>
 #include <set>
@@ -19,6 +19,7 @@ class ADO {
     pair<vertex, distance>** ps;
     const int k;
     const bool isClassic;
+    bool reduced;
 
     void buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q);
 
@@ -27,7 +28,6 @@ class ADO {
     void buildPS();
     void buildClusters();
     void buildBunches();
-    void dijkstra(vertex origin, function<bool(vertex, distance)> shouldCheck, function<bool(vertex, distance)> shouldInsert, function<void(vertex, distance)> insertDistance);
     template<class T>
     set<T>* hittingSet(set<T>** sets, int setCount);
 
