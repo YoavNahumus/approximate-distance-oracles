@@ -14,13 +14,13 @@ using std::function;
 using std::unordered_map;
 
 ADO::ADO(Graph* graph, int k, bool isClassic) : graph(graph), k(k), isClassic(isClassic) {
-    hierarchy = new map<vertex, map<vertex, distance>*>*[k];
+    hierarchy = new unordered_map<vertex, unordered_map<vertex, distance>*>*[k];
     for (auto p = hierarchy; p < hierarchy + k; ++p) {
-        *p = new map<vertex, map<vertex, distance>*>();
+        *p = new unordered_map<vertex, unordered_map<vertex, distance>*>();
     }
-    bunches = new map<vertex, distance>*[graph->vertexCount];
+    bunches = new unordered_map<vertex, distance>*[graph->vertexCount];
     for (auto p = bunches; p < bunches + graph->vertexCount; ++p) {
-        *p = new map<vertex, distance>();
+        *p = new unordered_map<vertex, distance>();
     }
     ps = new pair<vertex, distance>*[graph->vertexCount];
     for (auto p = ps; p < ps + graph->vertexCount; ++p) {
@@ -49,6 +49,17 @@ ADO::~ADO() {
 
 void ADO::preprocess() {
     buildHierarchy();
+    std::cout << "Hierarchy built" << std::endl;
+    buildPS();
+    std::cout << "PS built" << std::endl;
+    buildClusters();
+    std::cout << "Clusters built" << std::endl;
+    buildBunches();
+    std::cout << "Bunches built" << std::endl;
+}
+
+void ADO::preprocess(int* heirarchySizes) {
+    buildRandHierarchy(heirarchySizes);
     std::cout << "Hierarchy built" << std::endl;
     buildPS();
     std::cout << "PS built" << std::endl;
@@ -91,7 +102,7 @@ template<class T>
 set<T>* ADO::hittingSet(set<T>** sets, int setCount) {
     set<T>* result = new set<T>;
     set<pair<T, set<set<T>*>*>>** arr = new set<pair<T, set<set<T>*>*>>*[setCount];
-    map<T, set<set<T>*>*>* inverse = new map<T, set<set<T>*>*>();
+    unordered_map<T, set<set<T>*>*>* inverse = new unordered_map<T, set<set<T>*>*>();
     for (int i = 0; i < setCount; ++i) {
         arr[i] = new set<pair<T, set<set<T>*>*>>;
         for (auto&& v : *sets[i]) {
@@ -224,7 +235,22 @@ void ADO::buildRandHierarchy() {
             }
         }
     }
+}
 
+void ADO::buildRandHierarchy(int* heirarchySizes) {
+    srand(time(nullptr));
+    double chance = pow(graph->vertexCount, -1.0 / k);
+    for (int j = 0; j < graph->vertexCount; ++j) {
+        hierarchy[0]->insert({j, nullptr});
+    }
+    for (int i = 1; i < k; ++i) {
+        // add heirarchySizes[i] vertices to the hierarchy
+        do {
+            auto iter = hierarchy[i - 1]->begin();
+            std::advance(iter, rand() % hierarchy[i - 1]->size());
+            hierarchy[i]->insert(*iter);
+        } while (hierarchy[i]->size() != heirarchySizes[i]);
+    }
 }
 
 void ADO::buildPS() {
@@ -264,10 +290,10 @@ void ADO::buildPS() {
     delete fibQueue;
 }
 
-void ADO::buildCluster(int i, pair<const vertex, map<vertex, distance>*>* q) {
+void ADO::buildCluster(int i, pair<const vertex, unordered_map<vertex, distance>*>* q) {
     // make sure that the vertex is not in the next level (A_(i+1))
     if ((i < k - 1 && hierarchy[i + 1]->count(q->first) == 0) || i == k - 1) {
-        q->second = new map<vertex, distance>();
+        q->second = new unordered_map<vertex, distance>();
         if (i == (k - 1) / 2 && !isClassic) {
             graph->dijkstra(q->first, [this, i](vertex v, distance d) {
                 return true;

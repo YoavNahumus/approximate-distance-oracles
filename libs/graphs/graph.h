@@ -10,7 +10,7 @@
 #include "../fibo/fiboqueue.h"
 #include <functional>
 
-using std::map;
+using std::unordered_map;
 using std::function;
 
 typedef int vertex;
@@ -18,7 +18,7 @@ typedef double distance;
 
 class Graph {
 private:
-    map<vertex, distance>** neighborsList;
+    unordered_map<vertex, distance>** neighborsList;
 
     void loadFromCSV(const std::string &filename, bool weighted) {
         std::ifstream inputFile(filename);
@@ -55,9 +55,9 @@ private:
 
             // Initialize neighborsList
             if (vertexCount > 0) {
-                this->neighborsList = new map<vertex, distance>*[vertexCount];
+                this->neighborsList = new unordered_map<vertex, distance>*[vertexCount];
                 for (int i = 0; i < vertexCount; ++i) {
-                    neighborsList[i] = new map<vertex, distance>();
+                    neighborsList[i] = new unordered_map<vertex, distance>();
                 }
             }
 
@@ -119,9 +119,9 @@ private:
 
         // Initialize neighborsList with the updated vertexCount
         if (vertexCount > 0) {
-            neighborsList = new map<vertex, distance>*[vertexCount];
+            neighborsList = new unordered_map<vertex, distance>*[vertexCount];
             for (int i = 0; i < vertexCount; ++i) {
-                neighborsList[i] = new map<vertex, distance>();
+                neighborsList[i] = new unordered_map<vertex, distance>();
             }
         }
 
@@ -159,8 +159,8 @@ public:
     vertex edgeCount;
 
     Graph(vertex vertexCount) : vertexCount(vertexCount), edgeCount(0) {
-        neighborsList = new map<vertex, distance>*[vertexCount];
-        for (auto ptr = neighborsList; ptr < neighborsList + vertexCount; *(ptr++) = new map<vertex, distance>());
+        neighborsList = new unordered_map<vertex, distance>*[vertexCount];
+        for (auto ptr = neighborsList; ptr < neighborsList + vertexCount; *(ptr++) = new unordered_map<vertex, distance>());
     }
 
     Graph(const std::string &filename, bool weighted) {
@@ -185,7 +185,7 @@ public:
     double getEdgeWeight(vertex vertex1, vertex vertex2) {
         return neighborsList[vertex1]->at(vertex2);
     }
-    const map<vertex, distance>& getEdges(vertex vertex) {
+    const unordered_map<vertex, distance>& getEdges(vertex vertex) {
         return *neighborsList[vertex];
     }
     bool hasEdge(vertex vertex1, vertex vertex2) {
@@ -201,7 +201,7 @@ public:
     void dijkstra(vertex origin, function<bool(vertex, distance)> shouldCheck, function<bool(vertex, distance)> shouldInsert, function<void(vertex, distance)> insertDistance) {
         FibQueue<distance, vertex>* fibQueue = new FibQueue<distance, vertex>();
         fibQueue->push(0.0, origin);
-        map<vertex, distance>* distances = new map<vertex, distance>();
+        unordered_map<vertex, distance>* distances = new unordered_map<vertex, distance>();
         distances->insert_or_assign(origin, 0.0);
         while (!fibQueue->empty()) {
             auto v = fibQueue->pop();
@@ -228,7 +228,7 @@ public:
     void dijkstra(vertex origin, vertex maxCount, function<void(vertex, distance)> insertDistance) {
         FibQueue<distance, vertex>* fibQueue = new FibQueue<distance, vertex>();
         fibQueue->push(0.0, origin);
-        map<vertex, distance>* distances = new map<vertex, distance>();
+        unordered_map<vertex, distance>* distances = new unordered_map<vertex, distance>();
         distances->insert_or_assign(origin, 0.0);
         int count = 0;
         while (!fibQueue->empty() && count++ < maxCount) {
@@ -249,7 +249,7 @@ public:
     }
 
     Graph* reduceGraph(vertex maxCount, vertex origin = 0) {
-        map<vertex, vertex>* mapping = new map<vertex, vertex>();
+        unordered_map<vertex, vertex>* mapping = new unordered_map<vertex, vertex>();
         dijkstra(origin, maxCount, [mapping](vertex v, distance d) {
             mapping->insert({v, mapping->size()});
         });

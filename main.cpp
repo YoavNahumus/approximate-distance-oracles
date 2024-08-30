@@ -1,6 +1,8 @@
 #include "ADO.hpp"
 #include <iostream>
 
+#define TESTS 1000000
+
 int main(int argc, char const *argv[]) {
     
     if (argc < 2) {
@@ -9,15 +11,16 @@ int main(int argc, char const *argv[]) {
     }
 
     Graph* g = new Graph(argv[1], false);
-    Graph* temp = g->reduceGraph(100000);
+    Graph* temp = g->reduceGraph(10000);
     delete g;
     g = temp;
     std::cout << "The Graph has " << g->vertexCount << " vertices and " << g->edgeCount << " edges" << std::endl;
     
     ADO* ado = new ADO(g, 3, true);
     ADO* ado2 = new ADO(g, 3, false);
-    ado->preprocess();
     ado2->preprocess();
+    int sizes[3] = {(int)ado2->hierarchy[0]->size(), (int)ado2->hierarchy[1]->size(), (int)ado2->hierarchy[2]->size()};
+    ado->preprocess(sizes);
     
     distance sum1 = 0;
     distance sum2 = 0;
@@ -25,7 +28,8 @@ int main(int argc, char const *argv[]) {
     distance worst12 = 0;
     distance worst21 = 0;
     distance worst22 = 0;
-    for (int i = 0; i < 1000000; i++) {
+    ulong count_worse = 0;
+    for (int i = 0; i < TESTS; i++) {
         vertex v1 = rand() % g->vertexCount;
         vertex v2 = rand() % g->vertexCount;
         distance d1 = ado->query(v1, v2);
@@ -38,6 +42,9 @@ int main(int argc, char const *argv[]) {
             worst21 = d2;
             worst22 = d1;
         }
+        if (d1 < d2) {
+            count_worse++;
+        }
         sum1 += d1;
         sum2 += d2;
     }
@@ -47,10 +54,12 @@ int main(int argc, char const *argv[]) {
     std::cout << "Worst1: " << worst11 << " " << worst12 << std::endl;
     std::cout << "Worst2: " << worst21 << " " << worst22 << std::endl;
 
-    std::cout << "Average1: " << sum1 / 1000000 << std::endl;
-    std::cout << "Average2: " << sum2 / 1000000 << std::endl;
+    std::cout << "Average1: " << sum1 / TESTS << std::endl;
+    std::cout << "Average2: " << sum2 / TESTS << std::endl;
 
     std::cout << "Improvement: " << (sum1 - sum2) / sum1 << std::endl;
+
+    std::cout << "Improved: " << ((double)(TESTS - count_worse) * 100) / TESTS << "%" << std::endl;
 
     delete ado2;
     delete ado;
