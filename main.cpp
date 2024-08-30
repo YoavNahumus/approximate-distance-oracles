@@ -3,25 +3,27 @@
 
 int main(int argc, char const *argv[]) {
     
-    if (argc < 4) {
-        std::cout << "Usage: " << argv[0] << " <graph file> <K> <test count>" << std::endl;
+    if (argc < 5) {
+        std::cout << "Usage: " << argv[0] << " <graph file> <K> <vertex count> <test count>" << std::endl;
         return 1;
     }
 
-    int K = atoi(argv[2]);
-    long TESTS = atol(argv[3]);
+    int k = atoi(argv[2]);
+    vertex vertexCount = atoi(argv[3]);
+    long tests = atol(argv[4]);
+    
 
     Graph* g = new Graph(argv[1], false);
-    Graph* temp = g->reduceGraph(10000);
+    Graph* temp = g->reduceGraph(vertexCount);
     delete g;
     g = temp;
     std::cout << "The Graph has " << g->vertexCount << " vertices and " << g->edgeCount << " edges" << std::endl;
     
-    ADO* ado = new ADO(g, K, true);
-    ADO* ado2 = new ADO(g, K, false);
+    ADO* ado = new ADO(g, k, true);
+    ADO* ado2 = new ADO(g, k, false);
     ado2->preprocess();
-    int sizes[K];
-    for (int i = 0; i < K; i++) {
+    int sizes[k];
+    for (int i = 0; i < k; i++) {
         sizes[i] = ado2->hierarchy[i]->size();
     }
     ado->preprocess(sizes);
@@ -33,7 +35,7 @@ int main(int argc, char const *argv[]) {
     distance largest_diff_pos = 0;
     distance largest_diff_neg = 0;
     ulong count_worse = 0;
-    for (long i = 0; i < TESTS; i++) {
+    for (long i = 0; i < tests; i++) {
         vertex v1 = rand() % g->vertexCount;
         vertex v2 = rand() % g->vertexCount;
         distance d1 = ado->query(v1, v2);
@@ -61,12 +63,12 @@ int main(int argc, char const *argv[]) {
     std::cout << "Worst1: " << worst1 << std::endl;
     std::cout << "Worst2: " << worst2 << std::endl;
 
-    std::cout << "Average1: " << sum1 / TESTS << std::endl;
-    std::cout << "Average2: " << sum2 / TESTS << std::endl;
+    std::cout << "Average1: " << sum1 / tests << std::endl;
+    std::cout << "Average2: " << sum2 / tests << std::endl;
 
     std::cout << "Improvement: " << (sum1 - sum2) / sum1 << std::endl;
 
-    std::cout << "Improved: " << ((double)(TESTS - count_worse) * 100) / TESTS << "%" << std::endl;
+    std::cout << "Improved: " << ((double)(tests - count_worse) * 100) / tests << "%" << std::endl;
 
     std::cout << "Largest diff pos: " << largest_diff_pos << std::endl;
     std::cout << "Largest diff neg: " << largest_diff_neg << std::endl;
