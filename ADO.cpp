@@ -291,7 +291,7 @@ void ADO::buildPS() {
 }
 
 void ADO::buildCluster(int i, pair<const vertex, unordered_map<vertex, distance>*>* q) {
-    if (q->second == nullptr && (i != (k - 1) / 2 || isClassic)) {
+    if ((i == k - 1 || hierarchy[i + 1]->count(q->first) == 0) && (i != (k - 1) / 2 || isClassic)) {
         q->second = new unordered_map<vertex, distance>();
         graph->dijkstra(q->first, [this, i](vertex v, distance d) {
             return d < ps[v][i + 1].second;
@@ -301,8 +301,7 @@ void ADO::buildCluster(int i, pair<const vertex, unordered_map<vertex, distance>
             q->second->insert_or_assign(v, d);
         });
     } else if (i == (k - 1) / 2 && !isClassic) {
-        if (q->second == nullptr)
-            q->second = new unordered_map<vertex, distance>();
+        q->second = new unordered_map<vertex, distance>();
         graph->dijkstra(q->first, [this, i](vertex v, distance d) {
             return true;
         }, [this, i](vertex v, distance d) {

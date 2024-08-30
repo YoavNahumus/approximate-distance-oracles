@@ -1,15 +1,15 @@
 #include "ADO.hpp"
 #include <iostream>
 
-#define TESTS 1000000
-#define K 3
-
 int main(int argc, char const *argv[]) {
     
-    if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <graph file>" << std::endl;
+    if (argc < 4) {
+        std::cout << "Usage: " << argv[0] << " <graph file> <K> <test count>" << std::endl;
         return 1;
     }
+
+    int K = atoi(argv[2]);
+    long TESTS = atol(argv[3]);
 
     Graph* g = new Graph(argv[1], false);
     Graph* temp = g->reduceGraph(10000);
@@ -33,7 +33,7 @@ int main(int argc, char const *argv[]) {
     distance largest_diff_pos = 0;
     distance largest_diff_neg = 0;
     ulong count_worse = 0;
-    for (int i = 0; i < TESTS; i++) {
+    for (long i = 0; i < TESTS; i++) {
         vertex v1 = rand() % g->vertexCount;
         vertex v2 = rand() % g->vertexCount;
         distance d1 = ado->query(v1, v2);
