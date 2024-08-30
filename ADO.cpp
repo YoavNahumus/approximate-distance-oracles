@@ -91,7 +91,7 @@ distance ADO::asymetricQuery(vertex vertex1, vertex vertex2) {
     }
     if (i > index) {
         auto pu = ps[vertex1][index];
-        auto pv = ps[vertex2][index + 1 - k % 2];
+        auto pv = ps[vertex2][k / 2];
         return pu.second + bunches[pv.first]->at(pu.first) + pv.second;
     }
         
@@ -291,31 +291,30 @@ void ADO::buildPS() {
 }
 
 void ADO::buildCluster(int i, pair<const vertex, unordered_map<vertex, distance>*>* q) {
-    // make sure that the vertex is not in the next level (A_(i+1))
-    if ((i < k - 1 && hierarchy[i + 1]->count(q->first) == 0) || i == k - 1) {
+    if (q->second == nullptr && (i != (k - 1) / 2 || isClassic)) {
         q->second = new unordered_map<vertex, distance>();
-        if (i == (k - 1) / 2 && !isClassic) {
-            graph->dijkstra(q->first, [this, i](vertex v, distance d) {
-                return true;
-            }, [this, i](vertex v, distance d) {
-                return d < ps[v][i + 1].second || hierarchy[i + 1 - k % 2]->count(v) == 1;
-            }, [this, q](vertex v, distance d) {
+        graph->dijkstra(q->first, [this, i](vertex v, distance d) {
+            return d < ps[v][i + 1].second;
+        }, [this, i](vertex v, distance d) {
+            return true;
+        }, [this, q](vertex v, distance d) {
+            q->second->insert_or_assign(v, d);
+        });
+    } else if (i == (k - 1) / 2 && !isClassic) {
+        if (q->second == nullptr)
+            q->second = new unordered_map<vertex, distance>();
+        graph->dijkstra(q->first, [this, i](vertex v, distance d) {
+            return true;
+        }, [this, i](vertex v, distance d) {
+            return d < ps[v][i + 1].second || hierarchy[k / 2]->count(v) == 1;
+        }, [this, q](vertex v, distance d) {
                 q->second->insert_or_assign(v, d);
-            });
-        } else {
-            graph->dijkstra(q->first, [this, i](vertex v, distance d) {
-                return d < ps[v][i + 1].second;
-            }, [this, i](vertex v, distance d) {
-                return true;
-            }, [this, q](vertex v, distance d) {
-                q->second->insert_or_assign(v, d);
-            });
-        }
+        });
     }
 }
 
 void ADO::buildClusters() {
-    for (int i = 0; i < k; ++i) {
+    for (int i = k - 1; i >= 0; --i) {
         int size = hierarchy[i]->size();
         #pragma omp parallel for
         for (int j = 0; j < size; ++j) {
