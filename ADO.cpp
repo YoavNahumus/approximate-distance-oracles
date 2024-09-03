@@ -13,15 +13,24 @@ using std::set;
 using std::function;
 using std::unordered_map;
 
+/**
+ * Constructor for the ADO class.
+ * @param graph The graph.
+ * @param k The size of the hierarchy.
+ * @param isClassic A boolean value indicating whether the algorithm is classic or not.
+ */
 ADO::ADO(Graph* graph, int k, bool isClassic) : graph(graph), k(k), isClassic(isClassic) {
+    // Initialize the hierarchy
     hierarchy = new unordered_map<vertex, unordered_map<vertex, distance>*>*[k];
     for (auto p = hierarchy; p < hierarchy + k; ++p) {
         *p = new unordered_map<vertex, unordered_map<vertex, distance>*>();
     }
+    // Initialize the bunches
     bunches = new unordered_map<vertex, distance>*[graph->vertexCount];
     for (auto p = bunches; p < bunches + graph->vertexCount; ++p) {
         *p = new unordered_map<vertex, distance>();
     }
+    // Initialize the ps array
     ps = new pair<vertex, distance>*[graph->vertexCount];
     for (auto p = ps; p < ps + graph->vertexCount; ++p) {
         *p = new pair<vertex, distance>[k + 1];
@@ -29,7 +38,11 @@ ADO::ADO(Graph* graph, int k, bool isClassic) : graph(graph), k(k), isClassic(is
     reduced = false;
 }
 
+/**
+ * Destructor for the ADO class.
+ */
 ADO::~ADO() {
+    // Delete the graph, hierarchy, bunches, and ps arrays
     for (auto p = ps; p < ps + graph->vertexCount; delete[] *(p++));
     delete[] ps;
 
@@ -47,81 +60,140 @@ ADO::~ADO() {
     if (reduced) delete graph;
 }
 
+/**
+ * Preprocesses the graph.
+ */
 void ADO::preprocess() {
+    // Build the hirerachy
     buildHierarchy();
+    // notify the user that the hierarchy has been built
     std::cout << "Hierarchy built" << std::endl;
+    // Build the PS array
     buildPS();
+    // notify the user that the PS array has been built
     std::cout << "PS built" << std::endl;
+    // Build the clusters
     buildClusters();
+    // notify the user that the clusters have been built
     std::cout << "Clusters built" << std::endl;
+    // Build the bunches
     buildBunches();
+    // notify the user that the bunches have been built
     std::cout << "Bunches built" << std::endl;
 }
 
+/**
+ * Preprocesses the graph. This version of the function allows the user to specify the size of the hierarchy.
+ * @param heirarchySizes The size of the hierarchy.
+ */
 void ADO::preprocess(int* heirarchySizes) {
+    // Build the hierarchy with the specified sizes
     buildRandHierarchy(heirarchySizes);
+    // notify the user that the hierarchy has been built
     std::cout << "Hierarchy built" << std::endl;
+    // Build the PS array
     buildPS();
+    // notify the user that the PS array has been built
     std::cout << "PS built" << std::endl;
+    // Build the clusters
     buildClusters();
+    // notify the user that the clusters have been built
     std::cout << "Clusters built" << std::endl;
+    // Build the bunches
     buildBunches();
+    // notify the user that the bunches have been built
     std::cout << "Bunches built" << std::endl;
 }
-
+/**
+ * Queries the distance between two vertices.
+ * @param vertex1 The first vertex.
+ * @param vertex2 The second vertex.
+ */
 distance ADO::query(vertex vertex1, vertex vertex2) {
+    // If the vertices are the same, return 0
     if (vertex1 == vertex2) return 0;
+    // Return the minimum of the two asymmetric queries
     return min(asymetricQuery(vertex1, vertex2), asymetricQuery(vertex2, vertex1));
 }
 
+/**
+ * Queries the distance between two vertices. This version of the function is used for asymmetric queries, a directed path from vertex1 to vertex2.
+ * @param vertex1 The first vertex.
+ * @param vertex2 The second vertex.
+ */
 distance ADO::asymetricQuery(vertex vertex1, vertex vertex2) {
+    // If the graph has an edge between the two vertices, return the weight of the edge
     if (graph->hasEdge(vertex1, vertex2) > 0)
         return graph->getEdgeWeight(vertex1, vertex2);
 
+    // Inintialize the variables
     vertex w = vertex1;
     vertex i = 0;
+    // Set the number of the bunches depending on whether the hierarchy is classic or not
     int index = (k - 1) / 2;
     if (isClassic) index = k;
+    
     while (bunches[vertex2]->count(w) == 0 && i <= index) {
+        // Increment i
         ++i;
+        // Swap the vertices if needed
         vertex1 ^= vertex2;
         vertex2 ^= vertex1;
         vertex1 ^= vertex2;
+        // Set w to the vertex that is used now
         w = ps[vertex1][i].first;
     }
+    // If i is greater than index, return the distance between the two vertices based on the bunches and their distances
     if (i > index) {
         auto pu = ps[vertex1][index];
         auto pv = ps[vertex2][k / 2];
         return pu.second + bunches[pv.first]->at(pu.first) + pv.second;
     }
-        
+    
+    // Return the distance between the two vertices based on the bunches and their distances
     return ps[vertex1][i].second + bunches[vertex2]->at(w);
 }
 
+/**
+ * Finds the hitting set of a set of sets.
+ * @param sets The set of sets.
+ * @param setCount The number of sets.
+ */
 template<class T>
 set<T>* ADO::hittingSet(set<T>** sets, int setCount) {
+    // Initialize the variables
     set<T>* result = new set<T>;
     set<pair<T, set<set<T>*>*>>** arr = new set<pair<T, set<set<T>*>*>>*[setCount];
     unordered_map<T, set<set<T>*>*>* inverse = new unordered_map<T, set<set<T>*>*>();
+    // Iterate over the sets
     for (int i = 0; i < setCount; ++i) {
+        // Initialize the array
         arr[i] = new set<pair<T, set<set<T>*>*>>;
+        // Iterate over the elements of the set
         for (auto&& v : *sets[i]) {
+            // Insert the element into the inverse map
             auto iter = inverse->find(v);
+            // If the element is not in the map, insert it
             if (iter == inverse->end()) {
                 set<set<T>*>* s = new set<set<T>*>;
                 s->insert(sets[i]);
                 inverse->insert({v, s});
             } else {
+                // Otherwise, insert the set into the set of sets
                 iter->second->insert(sets[i]);
             }
         }
     }
 
+    // Iterate over the inverse map
     for (auto&& p : *inverse) {
+        // Insert the element into the end of the array
         arr[p.second->size() - 1]->insert({p.first, p.second});
     }
+    // Delete the inverse map
     delete inverse;
 
+    // Initialize the alreadyHit set
     set<set<T>*>* alreadyHit = new set<set<T>*>;
     for (int i = setCount - 1; i > 1 && alreadyHit->size() != setCount; --i) {
         for (auto&& p : *arr[i]) {
