@@ -196,13 +196,18 @@ set<T>* ADO::hittingSet(set<T>** sets, int setCount) {
     // Initialize the alreadyHit set
     set<set<T>*>* alreadyHit = new set<set<T>*>;
     for (int i = setCount - 1; i > 1 && alreadyHit->size() != setCount; --i) {
+        // Iterate over the elements of the array
         for (auto&& p : *arr[i]) {
+            // Get the size of the set
             int size = p.second->size();
+            // Iterate over the elements of the set
             for (auto&& s : *alreadyHit) {
+                // If the set contains the element, erase it
                 if (p.second->count(s) > 0) {
                     p.second->erase(s);
                 }
             }
+            // If the size of the set is the same as the size of the set of sets, insert the element into the result set
             if (size = p.second->size()) {
                 result->insert(p.first);
                 for (auto&& s : *p.second) {
@@ -211,7 +216,7 @@ set<T>* ADO::hittingSet(set<T>** sets, int setCount) {
             }
         }
     }
-
+    // Clean up the memory
     for (int i = 0; i < setCount; ++i) {
         for (auto&& p : *arr[i]) {
             delete p.second;
@@ -222,50 +227,71 @@ set<T>* ADO::hittingSet(set<T>** sets, int setCount) {
     delete alreadyHit;
 
     delete[] arr;
-    
+    // Return the result set
     return result;
 }
 
+/**
+ * Builds the hierarchy.
+ */
 void ADO::buildHierarchy() {
+    // If the algorithm is classic, build the hierarchy using the classic method
     if (isClassic) {
         buildRandHierarchy();
         return;
     }
+    // Otherwise, build the hierarchy using the new method
     srand(time(nullptr));
+    // Calculate the chance = graph->vertexCount^(-1/k)
     double chance = pow(graph->vertexCount, -1.0 / k);
+    // Iterate over the vertices
     for (int j = 0; j < graph->vertexCount; ++j) {
+        // Insert the vertex into the hierarchy
         hierarchy[0]->insert({j, nullptr});
         
     }
+    // Initialize the sets
     set<vertex>** sets = new set<vertex>*[graph->vertexCount];
+    // Calculate the size of the hitting set
     double s = pow(graph->edgeCount, 1.0 / k) * log(graph->vertexCount);
+    // Iterate over the vertices
     #pragma omp parallel for
     for (int j = 0; j < graph->vertexCount; ++j) {
+        // Initialize the set
         sets[j] = new set<vertex>;
+        // Perform a dijkstra search on each vertex and insert the result into the set
         graph->dijkstra(j, s, [this, j, sets](vertex v, distance d) {
             sets[j]->insert(v);
         });
     }
-
+    // Calculate the hitting set
     std::cout << "Hitting set" << std::endl;
-
+    
     set<vertex>* hitting = hittingSet(sets, graph->vertexCount);
+    // Insert the vertices of the hitting set into the hierarchy
     for (auto&& v : *hitting) {
         hierarchy[1]->insert({v, nullptr});
     }
+    // Build the PS array
     buildPS();
-
+    // Initialize the sets
     set<vertex>** sets2 = new set<vertex>*[graph->vertexCount];
+    // Iterate over the vertices
     for (int j = 0; j < graph->vertexCount; ++j) {
+        // Initialize the sets
         sets2[j] = new set<vertex>;
+        // Perform a dijkstra search on each vertex and insert the result into the set
         graph->dijkstra(j, [this](vertex v, distance d) {
             return d < ps[v][1].second;
         }, [this, j, sets](vertex v, distance d) {
+            // Iterate over the edges of the vertex, ordered by neighbor list
             for (auto&& e : graph->getEdges(v)) {
+                // If the set does not contain the element, return true
                 if (sets[j]->count(e.first) == 0){
                     return true;
                 }
             }
+            // Otherwise, return false
             return false;
         }, [this, j, sets2](vertex v, distance d) {
             sets2[j]->insert(v);
@@ -273,10 +299,12 @@ void ADO::buildHierarchy() {
     }
 
     delete hitting;
+    // Calculate the hitting set
     hitting = hittingSet(sets2, graph->vertexCount);
     for (auto&& v : *hitting) {
         hierarchy[1]->insert({v, nullptr});
     }
+    // Clean up the memory
     for (int i = 0; i < graph->vertexCount; ++i) {
         delete sets2[i];
         delete sets[i];
@@ -284,7 +312,7 @@ void ADO::buildHierarchy() {
     delete[] sets2;
     delete[] sets;
     delete hitting;
-
+    
     for (int i = 2; i < k; ++i) {
         for (auto&& j : *hierarchy[i - 1]) {
             if (rand() < chance * RAND_MAX) {
@@ -294,14 +322,22 @@ void ADO::buildHierarchy() {
     }
 }
 
+/**
+ * Builds the random hierarchy.
+ */
 void ADO::buildRandHierarchy() {
     srand(time(nullptr));
+    // Calculate the chance = graph->vertexCount^(-1/k)
     double chance = pow(graph->vertexCount, -1.0 / k);
+    // Iterate over the vertices
     for (int j = 0; j < graph->vertexCount; ++j) {
+        // Insert the vertex into the hierarchy
         hierarchy[0]->insert({j, nullptr});
     }
+    // Iterate over the hierarchy
     for (int i = 1; i < k; ++i) {
         for (auto&& j : *hierarchy[i - 1]) {
+            // Insert the vertex into the hierarchy with a certain probability
             if (rand() < chance * RAND_MAX) {
                 hierarchy[i]->insert(j);
             }
@@ -309,12 +345,19 @@ void ADO::buildRandHierarchy() {
     }
 }
 
+/**
+ * Builds the random hierarchy.
+ * @param heirarchySizes The size of the hierarchy.
+ */
 void ADO::buildRandHierarchy(int* heirarchySizes) {
+    // Calculate the chance = graph->vertexCount^(-1/k)
     srand(time(nullptr));
     double chance = pow(graph->vertexCount, -1.0 / k);
+    // Iterate over the vertices
     for (int j = 0; j < graph->vertexCount; ++j) {
         hierarchy[0]->insert({j, nullptr});
     }
+    // Iterate over the hierarchy
     for (int i = 1; i < k; ++i) {
         // add heirarchySizes[i] vertices to the hierarchy
         do {
@@ -325,45 +368,66 @@ void ADO::buildRandHierarchy(int* heirarchySizes) {
     }
 }
 
+/**
+ * Builds the PS array.
+ */
 void ADO::buildPS() {
+    // Initialize the Fibonacci queue
     FibQueue<distance, vertex>* fibQueue = new FibQueue<distance, vertex>();
+    // Iterate over the vertices
     for (int j = 0; j < graph->vertexCount; ++j) {
+        // Initialize the PS array
         for (int i = 1; i < k + 1; ++i) {
             ps[j][i] = { -1, numeric_limits<distance>::max() };
         }
         ps[j][0] = { j, 0.0 };
     }
+    // Iterate over the hierarchy
     for (int i = k - 1; i > 0; --i) {
+        // Iterate over the vertices
         for (auto&& j : *hierarchy[i]) {
+            // Push the vertex into the Fibonacci queue
             fibQueue->push(0.0, j.first);
             ps[j.first][i] = {j.first, 0.0};
         }
-
+        // Iterate over the vertices
         while (!fibQueue->empty()) {
+            // Pop the vertex from the Fibonacci queue
             auto v = fibQueue->pop();
             auto p = ps[v][i];
+            // Iterate over the edges of the vertex
             for (auto&& j : graph->getEdges(v)) {
+                // Calculate the distance
                 distance alt = p.second + j.second;
+                // If the distance is less than the current distance, update the distance
                 if (alt < ps[j.first][i].second) {
                     ps[j.first][i] = {p.first, alt};
                     fibQueue->decrease_key_or_push(alt, j.first);
                 }
             }
         }
-
+        // Iterate over the vertices
         for (auto p = ps; p < ps + graph->vertexCount; ++p) {
             if ((*p)[i].first == (*p)[i + 1].first) {
                 (*p)[i] = (*p)[i + 1];
             }
         }
-
+        // Clear the Fibonacci queue
         fibQueue->clear();
     }
+    // Clean up the memory
     delete fibQueue;
 }
 
+/**
+ * Builds the cluster.
+ * @param i The index of the cluster.
+ * @param q The pair of the vertex and the distance.
+ */
 void ADO::buildCluster(int i, pair<const vertex, unordered_map<vertex, distance>*>* q) {
+    // If the cluster is the last cluster or the next cluster does not contain the vertex, build the cluster
     if ((i == k - 1 || hierarchy[i + 1]->count(q->first) == 0) && (i != (k - 1) / 2 || isClassic)) {
+        // Initialize the cluster
         q->second = new unordered_map<vertex, distance>();
         graph->dijkstra(q->first, [this, i](vertex v, distance d) {
             return d < ps[v][i + 1].second;
@@ -373,6 +437,7 @@ void ADO::buildCluster(int i, pair<const vertex, unordered_map<vertex, distance>
             q->second->insert_or_assign(v, d);
         });
     } else if (i == (k - 1) / 2 && !isClassic) {
+        // Otherwise, build the cluster
         q->second = new unordered_map<vertex, distance>();
         graph->dijkstra(q->first, [this, i](vertex v, distance d) {
             return true;
@@ -383,28 +448,41 @@ void ADO::buildCluster(int i, pair<const vertex, unordered_map<vertex, distance>
         });
     }
 }
-
+/**
+ * Builds the clusters.
+ */
 void ADO::buildClusters() {
+    // Iterate over the hierarchy
     for (int i = k - 1; i >= 0; --i) {
+        // Get the size of the hierarchy
         int size = hierarchy[i]->size();
+        // Iterate over the hierarchy
         #pragma omp parallel for
         for (int j = 0; j < size; ++j) {
             auto iter = hierarchy[i]->begin();
             std::advance(iter, j);
             buildCluster(i, &(*iter));
         }
+        // Notify the user that the cluster has been built
         std::cout << "Cluster " << i << " built" << std::endl;
         std::cout << "Heirarchy size: " << hierarchy[i]->size() << std::endl;
     }
 }
-
+/**
+ * Builds the bunches.
+ */
 void ADO::buildBunches() {
+    // Iterate over the hierarchy
     for (auto p = hierarchy; p < hierarchy + k; ++p) {
+        // Iterate over the hierarchy
         for (auto&& q : **p) {
+            // If the cluster is null, continue
             if (q.second == nullptr) {
                 continue;
             }
+            // Iterate over the edges of the cluster
             for (auto&& r : *q.second) {
+                // Insert the edge into the bunches
                 bunches[r.first]->insert_or_assign(q.first, r.second);
             }
         }

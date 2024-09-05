@@ -19,20 +19,26 @@ typedef double distance;
 class Graph {
 private:
     unordered_map<vertex, distance>** neighborsList;
-
+    /**
+     * Loads the graph from a CSV file.
+     * @param filename The name of the CSV file.
+     * @param weighted A boolean value indicating whether the graph is weighted or not.
+     */
     void loadFromCSV(const std::string &filename, bool weighted) {
+        // Open the file
         std::ifstream inputFile(filename);
         if (!inputFile) {
             std::cerr << "Error opening file!" << std::endl;
             return;
         }
-
+        // Read the file
         if (!weighted) {
+            // If the graph is unweighted, read the file line by line
             std::string line;
             std::getline(inputFile, line); // Skip the header line if there is one
 
             this->vertexCount = 0;
-
+            // Read the file to determine the number of vertices
             while (std::getline(inputFile, line)) {
                 std::istringstream iss(line);
                 std::string token;
@@ -65,7 +71,7 @@ private:
             inputFile.clear();
             inputFile.seekg(0);
             std::getline(inputFile, line); // Skip the header line again
-
+            // Read the file to add edges
             while (std::getline(inputFile, line)) {
                 std::istringstream iss(line);
                 std::string token;
@@ -79,29 +85,30 @@ private:
 
                 addEdge(node1, node2, 1);
             }
-
+            // Close the file
             inputFile.close();
             return;
         }
-
+        // If the graph is weighted, read the file line by line
         std::string line;
         std::getline(inputFile, line); // Skip the header line if there is one
 
         // Initialize vertexCount
         vertexCount = 0;
-
+        // Read the file to determine the number of vertices
         while (std::getline(inputFile, line)) {
+            // Parse the line
             std::istringstream iss(line);
             std::string token;
             vertex node1, node2;
             distance weight;
-
+            // Read the first column
             if (!std::getline(iss, token, ',')) continue;
             node1 = std::stoi(token);
-
+            // Read the second column
             if (!std::getline(iss, token, ',')) continue;
             node2 = std::stoi(token);
-
+            // Read the third column
             if (!std::getline(iss, token, ',')) continue;
             weight = std::stod(token);
 
@@ -129,28 +136,28 @@ private:
         inputFile.clear(); // Clear EOF flag
         inputFile.seekg(0); // Rewind file
         std::getline(inputFile, line); // Skip the header line again
-
+        // Read the file to add edges
         while (std::getline(inputFile, line)) {
             std::istringstream iss(line);
             std::string token;
             vertex node1, node2;
             distance weight;
-
+            // Read the first column
             if (!std::getline(iss, token, ',')) continue;
             node1 = std::stoi(token);
-
+            // Read the second column
             if (!std::getline(iss, token, ',')) continue;
             node2 = std::stoi(token);
-
+            // Read the third column
             if (!std::getline(iss, token, ',')) continue;
             weight = std::stod(token);
 
             // Skip the fourth column
             std::getline(iss, token, ',');
-
+            // Add the edge to the graph
             addEdge(node1, node2, weight); // Add the edge to the graph
         }
-
+        // Close the file
         inputFile.close();
     }
 
@@ -160,6 +167,7 @@ public:
 
     /**
      * Constructor for the Graph class.
+     * @param vertexCount The number of vertices in the graph.
      */
     Graph(vertex vertexCount) : vertexCount(vertexCount), edgeCount(0) {
         neighborsList = new unordered_map<vertex, distance>*[vertexCount];
@@ -168,6 +176,8 @@ public:
 
     /**
      * Constructor for the Graph class.
+     * @param filename The name of the CSV file.
+     * @param weighted A boolean value indicating whether the graph is weighted or not.
      */
     Graph(const std::string &filename, bool weighted) {
         this->loadFromCSV(filename, weighted);
@@ -196,18 +206,25 @@ public:
     }
     /**
      * Returns the weight of the edge between two vertices.
+     * @param vertex1 The first vertex.
+     * @param vertex2 The second vertex.
+     * @return The weight of the edge.
      */
     double getEdgeWeight(vertex vertex1, vertex vertex2) {
         return neighborsList[vertex1]->at(vertex2);
     }
     /**
      * Returns the neighbors of a vertex.
+     * @param vertex The vertex.
      */
     const unordered_map<vertex, distance>& getEdges(vertex vertex) {
         return *neighborsList[vertex];
     }
     /**
      * Returns the number of neighbors of a vertex.
+     * @param vertex1 The vertex.
+     * @param vertex2 The vertex.
+     * @return The number of neighbors of the vertex.
      */
     bool hasEdge(vertex vertex1, vertex vertex2) {
         return neighborsList[vertex1]->count(vertex2) > 0;
@@ -215,6 +232,9 @@ public:
 
     /**
      * Adds an edge to the graph.
+     * @param vertex1 The first vertex.
+     * @param vertex2 The second vertex.
+     * @param weight The weight of the edge.
      */
     void addEdge(vertex vertex1, vertex vertex2, distance weight) {
         if (!hasEdge(vertex1, vertex2)) edgeCount++;
@@ -224,6 +244,10 @@ public:
 
     /**
      * Dijkstra's algorithm for finding the shortest path from a vertex to all other vertices in the graph.
+     * @param origin The origin vertex.
+     * @param shouldCheck A function that determines whether a vertex should be checked.
+     * @param shouldInsert A function that determines whether a vertex should be inserted.
+     * @param insertDistance A function that inserts the distance of a vertex.
      */
     void dijkstra(vertex origin, function<bool(vertex, distance)> shouldCheck, function<bool(vertex, distance)> shouldInsert, function<void(vertex, distance)> insertDistance) {
         // Initialize the Fibonacci heap and the distances map
@@ -262,6 +286,9 @@ public:
 
     /**
      * Dijkstra's algorithm for finding the shortest path from a vertex to all other vertices in the graph.
+     * @param origin The origin vertex.
+     * @param maxCount The maximum number of vertices to visit.
+     * @param insertDistance A function that inserts the distance of a vertex.
      */
     void dijkstra(vertex origin, vertex maxCount, function<void(vertex, distance)> insertDistance) {
         // Initialize the Fibonacci heap and the distances map
@@ -296,6 +323,7 @@ public:
      * Reduces the graph to a subgraph with a given maximum number of vertices.
      * @param maxCount The maximum number of vertices in the subgraph.
      * @param origin The origin vertex for the Dijkstra's algorithm.
+     * @return The reduced graph.
      */
     Graph* reduceGraph(vertex maxCount, vertex origin = 0) {
         // Create a mapping from the original vertices to the new vertices
