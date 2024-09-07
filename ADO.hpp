@@ -18,7 +18,8 @@ class ADO {
     unordered_map<vertex, distance>** bunches;
     pair<vertex, distance>** ps;
     const int k;
-    const bool isClassic;
+    const bool doEdgeSet;
+    const bool connectMiddleLevel;
     bool reduced;
 
     void buildCluster(int i, pair<const vertex, unordered_map<vertex, distance>*>* q);
@@ -33,7 +34,7 @@ class ADO {
     set<T>* hittingSet(set<T>** sets, int setCount);
 
     public:
-    ADO(Graph* graph, int k, bool isClassic);
+    ADO(Graph* graph, int k, bool doEdgeSet, bool connectMiddleLevel);
     ~ADO();
 
     void preprocess();
