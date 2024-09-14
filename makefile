@@ -1,8 +1,5 @@
-all: build/graph.o build/main.o build/ADO.o
-	g++ -g build/graph.o build/main.o build/ADO.o -o main
-
-build/graph.o: graph.cpp
-	g++ graph.cpp -g -c -o build/graph.o
+all: build/main.o build/ADO.o
+	g++ -g build/main.o build/ADO.o -o main
 	
 build/main.o: main.cpp
 	g++ main.cpp -g -c -o build/main.o

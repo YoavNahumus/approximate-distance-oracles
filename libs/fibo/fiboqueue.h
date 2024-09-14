@@ -35,7 +35,7 @@ class FibQueue : public FibHeap<T, V, Comp>
  public:
   using Heap = FibHeap<T, V, Comp>;
   using Node = typename Heap::FibNode;
-  using KeyNodeIter = typename std::unordered_map<int, Node*>::iterator;
+  using KeyNodeIter = typename std::unordered_map<V, Node*>::iterator;
 
   FibQueue()
     : Heap()
@@ -108,12 +108,22 @@ class FibQueue : public FibHeap<T, V, Comp>
     return v;
   }
 
+  Node* popNode() {
+    if (Heap::empty())
+        return NULL;
+    Node* x = Heap::extract_min();
+    if (!x)
+        return NULL;
+    fstore.erase(x->value);
+    return x;
+  }
+
   void clear() {
       Heap::clear();
       fstore.clear();
   }
 
-  std::unordered_map<int, Node*> fstore;
+  std::unordered_map<V, Node*> fstore;
 };
 
 #endif
